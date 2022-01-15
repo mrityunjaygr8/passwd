@@ -46,5 +46,5 @@ func init() {
 	create_user_cmd.Flags().StringVarP(&create_user_email, "email", "e", "", "Email for the user to be created")
 	create_user_cmd.MarkFlagRequired("email")
 	create_user_cmd.Flags().StringVarP(&create_user_password, "password", "p", "", "Password for the user to be created [Not Recommended]")
-	rootCmd.AddCommand(create_user_cmd)
+	root_cmd.AddCommand(create_user_cmd)
 }
