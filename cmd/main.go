@@ -35,6 +35,6 @@ func main() {
 
 	// rootCmd.Execute()
 
-	cmd.RootCmd.Execute()
+	cmd.Execute()
 
 }
