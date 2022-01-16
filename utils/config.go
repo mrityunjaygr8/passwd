@@ -13,6 +13,8 @@ type Config struct {
 	DB_NAME string
 	DB_USER string
 	DB_PASS string
+	PORT    int
+	HOST    string
 }
 
 func GetConfig() Config {
@@ -22,6 +24,8 @@ func GetConfig() Config {
 	viper.SetDefault("DB_HOST", "localhost")
 	viper.SetDefault("DB_PORT", 5432)
 	viper.SetDefault("DB_NAME", "passwd")
+	viper.SetDefault("PORT", 1337)
+	viper.SetDefault("HOST", "localhost")
 
 	err := viper.ReadInConfig()
 	if err != nil {
