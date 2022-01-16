@@ -31,14 +31,14 @@ var login_cmd = &cobra.Command{
 
 		login_password = string(login_bytes_pass)
 		fmt.Println()
-		err = app.LoginUser(login_email, login_password)
+		token, err := app.LoginUser(login_email, login_password)
 		if err != nil {
 			log.Println(err)
 		}
 
 		if err == nil {
 			if _, err := os.Stat(utils.LOGIN_FILE); err == nil {
-				err := os.WriteFile(utils.LOGIN_FILE, []byte(login_email), 0644)
+				err := os.WriteFile(utils.LOGIN_FILE, []byte(token), 0644)
 				if err != nil {
 					log.Println("an error has occurred while loggin you in")
 				}
@@ -49,7 +49,7 @@ var login_cmd = &cobra.Command{
 				}
 				defer f.Close()
 
-				_, err = f.WriteString(login_email)
+				_, err = f.WriteString(token)
 				f.Sync()
 			} else {
 				fmt.Println(err)
