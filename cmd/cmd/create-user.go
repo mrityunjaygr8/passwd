@@ -38,7 +38,7 @@ var create_user_cmd = &cobra.Command{
 		if err != nil {
 			log.Println("error in creating user: %w", err)
 		}
-		fmt.Println(newUser)
+		fmt.Printf("User: %v has been successfully created\n", newUser.Email)
 	},
 }
 
