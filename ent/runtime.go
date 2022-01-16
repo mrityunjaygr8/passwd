@@ -2,8 +2,62 @@
 
 package ent
 
+import (
+	"time"
+
+	"github.com/mrtyunjaygr8/passwd/ent/creds"
+	"github.com/mrtyunjaygr8/passwd/ent/passwords"
+	"github.com/mrtyunjaygr8/passwd/ent/schema"
+	"github.com/mrtyunjaygr8/passwd/ent/user"
+)
+
 // The init function reads all schema descriptors with runtime code
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	credsMixin := schema.Creds{}.Mixin()
+	credsMixinFields0 := credsMixin[0].Fields()
+	_ = credsMixinFields0
+	credsFields := schema.Creds{}.Fields()
+	_ = credsFields
+	// credsDescCreateTime is the schema descriptor for create_time field.
+	credsDescCreateTime := credsMixinFields0[0].Descriptor()
+	// creds.DefaultCreateTime holds the default value on creation for the create_time field.
+	creds.DefaultCreateTime = credsDescCreateTime.Default.(func() time.Time)
+	// credsDescUpdateTime is the schema descriptor for update_time field.
+	credsDescUpdateTime := credsMixinFields0[1].Descriptor()
+	// creds.DefaultUpdateTime holds the default value on creation for the update_time field.
+	creds.DefaultUpdateTime = credsDescUpdateTime.Default.(func() time.Time)
+	// creds.UpdateDefaultUpdateTime holds the default value on update for the update_time field.
+	creds.UpdateDefaultUpdateTime = credsDescUpdateTime.UpdateDefault.(func() time.Time)
+	passwordsMixin := schema.Passwords{}.Mixin()
+	passwordsMixinFields0 := passwordsMixin[0].Fields()
+	_ = passwordsMixinFields0
+	passwordsFields := schema.Passwords{}.Fields()
+	_ = passwordsFields
+	// passwordsDescCreateTime is the schema descriptor for create_time field.
+	passwordsDescCreateTime := passwordsMixinFields0[0].Descriptor()
+	// passwords.DefaultCreateTime holds the default value on creation for the create_time field.
+	passwords.DefaultCreateTime = passwordsDescCreateTime.Default.(func() time.Time)
+	// passwordsDescUpdateTime is the schema descriptor for update_time field.
+	passwordsDescUpdateTime := passwordsMixinFields0[1].Descriptor()
+	// passwords.DefaultUpdateTime holds the default value on creation for the update_time field.
+	passwords.DefaultUpdateTime = passwordsDescUpdateTime.Default.(func() time.Time)
+	// passwords.UpdateDefaultUpdateTime holds the default value on update for the update_time field.
+	passwords.UpdateDefaultUpdateTime = passwordsDescUpdateTime.UpdateDefault.(func() time.Time)
+	userMixin := schema.User{}.Mixin()
+	userMixinFields0 := userMixin[0].Fields()
+	_ = userMixinFields0
+	userFields := schema.User{}.Fields()
+	_ = userFields
+	// userDescCreateTime is the schema descriptor for create_time field.
+	userDescCreateTime := userMixinFields0[0].Descriptor()
+	// user.DefaultCreateTime holds the default value on creation for the create_time field.
+	user.DefaultCreateTime = userDescCreateTime.Default.(func() time.Time)
+	// userDescUpdateTime is the schema descriptor for update_time field.
+	userDescUpdateTime := userMixinFields0[1].Descriptor()
+	// user.DefaultUpdateTime holds the default value on creation for the update_time field.
+	user.DefaultUpdateTime = userDescUpdateTime.Default.(func() time.Time)
+	// user.UpdateDefaultUpdateTime holds the default value on update for the update_time field.
+	user.UpdateDefaultUpdateTime = userDescUpdateTime.UpdateDefault.(func() time.Time)
 }

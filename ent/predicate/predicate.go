@@ -6,5 +6,11 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
+// Creds is the predicate function for creds builders.
+type Creds func(*sql.Selector)
+
+// Passwords is the predicate function for passwords builders.
+type Passwords func(*sql.Selector)
+
 // User is the predicate function for user builders.
 type User func(*sql.Selector)

@@ -6,7 +6,10 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
+	"github.com/mrtyunjaygr8/passwd/ent/creds"
+	"github.com/mrtyunjaygr8/passwd/ent/passwords"
 	"github.com/mrtyunjaygr8/passwd/ent/predicate"
 	"github.com/mrtyunjaygr8/passwd/ent/user"
 
@@ -22,8 +25,1139 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeUser = "User"
+	TypeCreds     = "Creds"
+	TypePasswords = "Passwords"
+	TypeUser      = "User"
 )
+
+// CredsMutation represents an operation that mutates the Creds nodes in the graph.
+type CredsMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *int
+	create_time      *time.Time
+	update_time      *time.Time
+	name             *string
+	username         *string
+	url              *string
+	clearedFields    map[string]struct{}
+	user             *int
+	cleareduser      bool
+	passwords        map[int]struct{}
+	removedpasswords map[int]struct{}
+	clearedpasswords bool
+	done             bool
+	oldValue         func(context.Context) (*Creds, error)
+	predicates       []predicate.Creds
+}
+
+var _ ent.Mutation = (*CredsMutation)(nil)
+
+// credsOption allows management of the mutation configuration using functional options.
+type credsOption func(*CredsMutation)
+
+// newCredsMutation creates new mutation for the Creds entity.
+func newCredsMutation(c config, op Op, opts ...credsOption) *CredsMutation {
+	m := &CredsMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeCreds,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withCredsID sets the ID field of the mutation.
+func withCredsID(id int) credsOption {
+	return func(m *CredsMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Creds
+		)
+		m.oldValue = func(ctx context.Context) (*Creds, error) {
+			once.Do(func() {
+				if m.done {
+					err = fmt.Errorf("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Creds.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withCreds sets the old Creds of the mutation.
+func withCreds(node *Creds) credsOption {
+	return func(m *CredsMutation) {
+		m.oldValue = func(context.Context) (*Creds, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m CredsMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m CredsMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, fmt.Errorf("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *CredsMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// SetCreateTime sets the "create_time" field.
+func (m *CredsMutation) SetCreateTime(t time.Time) {
+	m.create_time = &t
+}
+
+// CreateTime returns the value of the "create_time" field in the mutation.
+func (m *CredsMutation) CreateTime() (r time.Time, exists bool) {
+	v := m.create_time
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreateTime returns the old "create_time" field's value of the Creds entity.
+// If the Creds object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CredsMutation) OldCreateTime(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldCreateTime is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldCreateTime requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreateTime: %w", err)
+	}
+	return oldValue.CreateTime, nil
+}
+
+// ResetCreateTime resets all changes to the "create_time" field.
+func (m *CredsMutation) ResetCreateTime() {
+	m.create_time = nil
+}
+
+// SetUpdateTime sets the "update_time" field.
+func (m *CredsMutation) SetUpdateTime(t time.Time) {
+	m.update_time = &t
+}
+
+// UpdateTime returns the value of the "update_time" field in the mutation.
+func (m *CredsMutation) UpdateTime() (r time.Time, exists bool) {
+	v := m.update_time
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdateTime returns the old "update_time" field's value of the Creds entity.
+// If the Creds object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CredsMutation) OldUpdateTime(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldUpdateTime is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldUpdateTime requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdateTime: %w", err)
+	}
+	return oldValue.UpdateTime, nil
+}
+
+// ResetUpdateTime resets all changes to the "update_time" field.
+func (m *CredsMutation) ResetUpdateTime() {
+	m.update_time = nil
+}
+
+// SetName sets the "name" field.
+func (m *CredsMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *CredsMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the Creds entity.
+// If the Creds object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CredsMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *CredsMutation) ResetName() {
+	m.name = nil
+}
+
+// SetUsername sets the "username" field.
+func (m *CredsMutation) SetUsername(s string) {
+	m.username = &s
+}
+
+// Username returns the value of the "username" field in the mutation.
+func (m *CredsMutation) Username() (r string, exists bool) {
+	v := m.username
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUsername returns the old "username" field's value of the Creds entity.
+// If the Creds object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CredsMutation) OldUsername(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldUsername is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldUsername requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUsername: %w", err)
+	}
+	return oldValue.Username, nil
+}
+
+// ResetUsername resets all changes to the "username" field.
+func (m *CredsMutation) ResetUsername() {
+	m.username = nil
+}
+
+// SetURL sets the "url" field.
+func (m *CredsMutation) SetURL(s string) {
+	m.url = &s
+}
+
+// URL returns the value of the "url" field in the mutation.
+func (m *CredsMutation) URL() (r string, exists bool) {
+	v := m.url
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldURL returns the old "url" field's value of the Creds entity.
+// If the Creds object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CredsMutation) OldURL(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldURL is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldURL requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldURL: %w", err)
+	}
+	return oldValue.URL, nil
+}
+
+// ResetURL resets all changes to the "url" field.
+func (m *CredsMutation) ResetURL() {
+	m.url = nil
+}
+
+// SetUserID sets the "user" edge to the User entity by id.
+func (m *CredsMutation) SetUserID(id int) {
+	m.user = &id
+}
+
+// ClearUser clears the "user" edge to the User entity.
+func (m *CredsMutation) ClearUser() {
+	m.cleareduser = true
+}
+
+// UserCleared reports if the "user" edge to the User entity was cleared.
+func (m *CredsMutation) UserCleared() bool {
+	return m.cleareduser
+}
+
+// UserID returns the "user" edge ID in the mutation.
+func (m *CredsMutation) UserID() (id int, exists bool) {
+	if m.user != nil {
+		return *m.user, true
+	}
+	return
+}
+
+// UserIDs returns the "user" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UserID instead. It exists only for internal usage by the builders.
+func (m *CredsMutation) UserIDs() (ids []int) {
+	if id := m.user; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetUser resets all changes to the "user" edge.
+func (m *CredsMutation) ResetUser() {
+	m.user = nil
+	m.cleareduser = false
+}
+
+// AddPasswordIDs adds the "passwords" edge to the Passwords entity by ids.
+func (m *CredsMutation) AddPasswordIDs(ids ...int) {
+	if m.passwords == nil {
+		m.passwords = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.passwords[ids[i]] = struct{}{}
+	}
+}
+
+// ClearPasswords clears the "passwords" edge to the Passwords entity.
+func (m *CredsMutation) ClearPasswords() {
+	m.clearedpasswords = true
+}
+
+// PasswordsCleared reports if the "passwords" edge to the Passwords entity was cleared.
+func (m *CredsMutation) PasswordsCleared() bool {
+	return m.clearedpasswords
+}
+
+// RemovePasswordIDs removes the "passwords" edge to the Passwords entity by IDs.
+func (m *CredsMutation) RemovePasswordIDs(ids ...int) {
+	if m.removedpasswords == nil {
+		m.removedpasswords = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.passwords, ids[i])
+		m.removedpasswords[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedPasswords returns the removed IDs of the "passwords" edge to the Passwords entity.
+func (m *CredsMutation) RemovedPasswordsIDs() (ids []int) {
+	for id := range m.removedpasswords {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// PasswordsIDs returns the "passwords" edge IDs in the mutation.
+func (m *CredsMutation) PasswordsIDs() (ids []int) {
+	for id := range m.passwords {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetPasswords resets all changes to the "passwords" edge.
+func (m *CredsMutation) ResetPasswords() {
+	m.passwords = nil
+	m.clearedpasswords = false
+	m.removedpasswords = nil
+}
+
+// Where appends a list predicates to the CredsMutation builder.
+func (m *CredsMutation) Where(ps ...predicate.Creds) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// Op returns the operation name.
+func (m *CredsMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (Creds).
+func (m *CredsMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *CredsMutation) Fields() []string {
+	fields := make([]string, 0, 5)
+	if m.create_time != nil {
+		fields = append(fields, creds.FieldCreateTime)
+	}
+	if m.update_time != nil {
+		fields = append(fields, creds.FieldUpdateTime)
+	}
+	if m.name != nil {
+		fields = append(fields, creds.FieldName)
+	}
+	if m.username != nil {
+		fields = append(fields, creds.FieldUsername)
+	}
+	if m.url != nil {
+		fields = append(fields, creds.FieldURL)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *CredsMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case creds.FieldCreateTime:
+		return m.CreateTime()
+	case creds.FieldUpdateTime:
+		return m.UpdateTime()
+	case creds.FieldName:
+		return m.Name()
+	case creds.FieldUsername:
+		return m.Username()
+	case creds.FieldURL:
+		return m.URL()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *CredsMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case creds.FieldCreateTime:
+		return m.OldCreateTime(ctx)
+	case creds.FieldUpdateTime:
+		return m.OldUpdateTime(ctx)
+	case creds.FieldName:
+		return m.OldName(ctx)
+	case creds.FieldUsername:
+		return m.OldUsername(ctx)
+	case creds.FieldURL:
+		return m.OldURL(ctx)
+	}
+	return nil, fmt.Errorf("unknown Creds field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CredsMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case creds.FieldCreateTime:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreateTime(v)
+		return nil
+	case creds.FieldUpdateTime:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdateTime(v)
+		return nil
+	case creds.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case creds.FieldUsername:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUsername(v)
+		return nil
+	case creds.FieldURL:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetURL(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Creds field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *CredsMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *CredsMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CredsMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Creds numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *CredsMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *CredsMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *CredsMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Creds nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *CredsMutation) ResetField(name string) error {
+	switch name {
+	case creds.FieldCreateTime:
+		m.ResetCreateTime()
+		return nil
+	case creds.FieldUpdateTime:
+		m.ResetUpdateTime()
+		return nil
+	case creds.FieldName:
+		m.ResetName()
+		return nil
+	case creds.FieldUsername:
+		m.ResetUsername()
+		return nil
+	case creds.FieldURL:
+		m.ResetURL()
+		return nil
+	}
+	return fmt.Errorf("unknown Creds field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *CredsMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.user != nil {
+		edges = append(edges, creds.EdgeUser)
+	}
+	if m.passwords != nil {
+		edges = append(edges, creds.EdgePasswords)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *CredsMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case creds.EdgeUser:
+		if id := m.user; id != nil {
+			return []ent.Value{*id}
+		}
+	case creds.EdgePasswords:
+		ids := make([]ent.Value, 0, len(m.passwords))
+		for id := range m.passwords {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *CredsMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.removedpasswords != nil {
+		edges = append(edges, creds.EdgePasswords)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *CredsMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case creds.EdgePasswords:
+		ids := make([]ent.Value, 0, len(m.removedpasswords))
+		for id := range m.removedpasswords {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *CredsMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.cleareduser {
+		edges = append(edges, creds.EdgeUser)
+	}
+	if m.clearedpasswords {
+		edges = append(edges, creds.EdgePasswords)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *CredsMutation) EdgeCleared(name string) bool {
+	switch name {
+	case creds.EdgeUser:
+		return m.cleareduser
+	case creds.EdgePasswords:
+		return m.clearedpasswords
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *CredsMutation) ClearEdge(name string) error {
+	switch name {
+	case creds.EdgeUser:
+		m.ClearUser()
+		return nil
+	}
+	return fmt.Errorf("unknown Creds unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *CredsMutation) ResetEdge(name string) error {
+	switch name {
+	case creds.EdgeUser:
+		m.ResetUser()
+		return nil
+	case creds.EdgePasswords:
+		m.ResetPasswords()
+		return nil
+	}
+	return fmt.Errorf("unknown Creds edge %s", name)
+}
+
+// PasswordsMutation represents an operation that mutates the Passwords nodes in the graph.
+type PasswordsMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *int
+	create_time   *time.Time
+	update_time   *time.Time
+	password      *string
+	clearedFields map[string]struct{}
+	cred          *int
+	clearedcred   bool
+	done          bool
+	oldValue      func(context.Context) (*Passwords, error)
+	predicates    []predicate.Passwords
+}
+
+var _ ent.Mutation = (*PasswordsMutation)(nil)
+
+// passwordsOption allows management of the mutation configuration using functional options.
+type passwordsOption func(*PasswordsMutation)
+
+// newPasswordsMutation creates new mutation for the Passwords entity.
+func newPasswordsMutation(c config, op Op, opts ...passwordsOption) *PasswordsMutation {
+	m := &PasswordsMutation{
+		config:        c,
+		op:            op,
+		typ:           TypePasswords,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withPasswordsID sets the ID field of the mutation.
+func withPasswordsID(id int) passwordsOption {
+	return func(m *PasswordsMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Passwords
+		)
+		m.oldValue = func(ctx context.Context) (*Passwords, error) {
+			once.Do(func() {
+				if m.done {
+					err = fmt.Errorf("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Passwords.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withPasswords sets the old Passwords of the mutation.
+func withPasswords(node *Passwords) passwordsOption {
+	return func(m *PasswordsMutation) {
+		m.oldValue = func(context.Context) (*Passwords, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m PasswordsMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m PasswordsMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, fmt.Errorf("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *PasswordsMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// SetCreateTime sets the "create_time" field.
+func (m *PasswordsMutation) SetCreateTime(t time.Time) {
+	m.create_time = &t
+}
+
+// CreateTime returns the value of the "create_time" field in the mutation.
+func (m *PasswordsMutation) CreateTime() (r time.Time, exists bool) {
+	v := m.create_time
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreateTime returns the old "create_time" field's value of the Passwords entity.
+// If the Passwords object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PasswordsMutation) OldCreateTime(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldCreateTime is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldCreateTime requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreateTime: %w", err)
+	}
+	return oldValue.CreateTime, nil
+}
+
+// ResetCreateTime resets all changes to the "create_time" field.
+func (m *PasswordsMutation) ResetCreateTime() {
+	m.create_time = nil
+}
+
+// SetUpdateTime sets the "update_time" field.
+func (m *PasswordsMutation) SetUpdateTime(t time.Time) {
+	m.update_time = &t
+}
+
+// UpdateTime returns the value of the "update_time" field in the mutation.
+func (m *PasswordsMutation) UpdateTime() (r time.Time, exists bool) {
+	v := m.update_time
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdateTime returns the old "update_time" field's value of the Passwords entity.
+// If the Passwords object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PasswordsMutation) OldUpdateTime(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldUpdateTime is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldUpdateTime requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdateTime: %w", err)
+	}
+	return oldValue.UpdateTime, nil
+}
+
+// ResetUpdateTime resets all changes to the "update_time" field.
+func (m *PasswordsMutation) ResetUpdateTime() {
+	m.update_time = nil
+}
+
+// SetPassword sets the "password" field.
+func (m *PasswordsMutation) SetPassword(s string) {
+	m.password = &s
+}
+
+// Password returns the value of the "password" field in the mutation.
+func (m *PasswordsMutation) Password() (r string, exists bool) {
+	v := m.password
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPassword returns the old "password" field's value of the Passwords entity.
+// If the Passwords object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PasswordsMutation) OldPassword(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldPassword is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldPassword requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPassword: %w", err)
+	}
+	return oldValue.Password, nil
+}
+
+// ResetPassword resets all changes to the "password" field.
+func (m *PasswordsMutation) ResetPassword() {
+	m.password = nil
+}
+
+// SetCredID sets the "cred" edge to the Creds entity by id.
+func (m *PasswordsMutation) SetCredID(id int) {
+	m.cred = &id
+}
+
+// ClearCred clears the "cred" edge to the Creds entity.
+func (m *PasswordsMutation) ClearCred() {
+	m.clearedcred = true
+}
+
+// CredCleared reports if the "cred" edge to the Creds entity was cleared.
+func (m *PasswordsMutation) CredCleared() bool {
+	return m.clearedcred
+}
+
+// CredID returns the "cred" edge ID in the mutation.
+func (m *PasswordsMutation) CredID() (id int, exists bool) {
+	if m.cred != nil {
+		return *m.cred, true
+	}
+	return
+}
+
+// CredIDs returns the "cred" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// CredID instead. It exists only for internal usage by the builders.
+func (m *PasswordsMutation) CredIDs() (ids []int) {
+	if id := m.cred; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetCred resets all changes to the "cred" edge.
+func (m *PasswordsMutation) ResetCred() {
+	m.cred = nil
+	m.clearedcred = false
+}
+
+// Where appends a list predicates to the PasswordsMutation builder.
+func (m *PasswordsMutation) Where(ps ...predicate.Passwords) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// Op returns the operation name.
+func (m *PasswordsMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (Passwords).
+func (m *PasswordsMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *PasswordsMutation) Fields() []string {
+	fields := make([]string, 0, 3)
+	if m.create_time != nil {
+		fields = append(fields, passwords.FieldCreateTime)
+	}
+	if m.update_time != nil {
+		fields = append(fields, passwords.FieldUpdateTime)
+	}
+	if m.password != nil {
+		fields = append(fields, passwords.FieldPassword)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *PasswordsMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case passwords.FieldCreateTime:
+		return m.CreateTime()
+	case passwords.FieldUpdateTime:
+		return m.UpdateTime()
+	case passwords.FieldPassword:
+		return m.Password()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *PasswordsMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case passwords.FieldCreateTime:
+		return m.OldCreateTime(ctx)
+	case passwords.FieldUpdateTime:
+		return m.OldUpdateTime(ctx)
+	case passwords.FieldPassword:
+		return m.OldPassword(ctx)
+	}
+	return nil, fmt.Errorf("unknown Passwords field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *PasswordsMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case passwords.FieldCreateTime:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreateTime(v)
+		return nil
+	case passwords.FieldUpdateTime:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdateTime(v)
+		return nil
+	case passwords.FieldPassword:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPassword(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Passwords field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *PasswordsMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *PasswordsMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *PasswordsMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Passwords numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *PasswordsMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *PasswordsMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *PasswordsMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Passwords nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *PasswordsMutation) ResetField(name string) error {
+	switch name {
+	case passwords.FieldCreateTime:
+		m.ResetCreateTime()
+		return nil
+	case passwords.FieldUpdateTime:
+		m.ResetUpdateTime()
+		return nil
+	case passwords.FieldPassword:
+		m.ResetPassword()
+		return nil
+	}
+	return fmt.Errorf("unknown Passwords field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *PasswordsMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.cred != nil {
+		edges = append(edges, passwords.EdgeCred)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *PasswordsMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case passwords.EdgeCred:
+		if id := m.cred; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *PasswordsMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *PasswordsMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *PasswordsMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedcred {
+		edges = append(edges, passwords.EdgeCred)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *PasswordsMutation) EdgeCleared(name string) bool {
+	switch name {
+	case passwords.EdgeCred:
+		return m.clearedcred
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *PasswordsMutation) ClearEdge(name string) error {
+	switch name {
+	case passwords.EdgeCred:
+		m.ClearCred()
+		return nil
+	}
+	return fmt.Errorf("unknown Passwords unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *PasswordsMutation) ResetEdge(name string) error {
+	switch name {
+	case passwords.EdgeCred:
+		m.ResetCred()
+		return nil
+	}
+	return fmt.Errorf("unknown Passwords edge %s", name)
+}
 
 // UserMutation represents an operation that mutates the User nodes in the graph.
 type UserMutation struct {
@@ -31,9 +1165,14 @@ type UserMutation struct {
 	op            Op
 	typ           string
 	id            *int
+	create_time   *time.Time
+	update_time   *time.Time
 	email         *string
 	password      *string
 	clearedFields map[string]struct{}
+	creds         map[int]struct{}
+	removedcreds  map[int]struct{}
+	clearedcreds  bool
 	done          bool
 	oldValue      func(context.Context) (*User, error)
 	predicates    []predicate.User
@@ -118,6 +1257,78 @@ func (m *UserMutation) ID() (id int, exists bool) {
 	return *m.id, true
 }
 
+// SetCreateTime sets the "create_time" field.
+func (m *UserMutation) SetCreateTime(t time.Time) {
+	m.create_time = &t
+}
+
+// CreateTime returns the value of the "create_time" field in the mutation.
+func (m *UserMutation) CreateTime() (r time.Time, exists bool) {
+	v := m.create_time
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreateTime returns the old "create_time" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldCreateTime(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldCreateTime is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldCreateTime requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreateTime: %w", err)
+	}
+	return oldValue.CreateTime, nil
+}
+
+// ResetCreateTime resets all changes to the "create_time" field.
+func (m *UserMutation) ResetCreateTime() {
+	m.create_time = nil
+}
+
+// SetUpdateTime sets the "update_time" field.
+func (m *UserMutation) SetUpdateTime(t time.Time) {
+	m.update_time = &t
+}
+
+// UpdateTime returns the value of the "update_time" field in the mutation.
+func (m *UserMutation) UpdateTime() (r time.Time, exists bool) {
+	v := m.update_time
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdateTime returns the old "update_time" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldUpdateTime(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldUpdateTime is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldUpdateTime requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdateTime: %w", err)
+	}
+	return oldValue.UpdateTime, nil
+}
+
+// ResetUpdateTime resets all changes to the "update_time" field.
+func (m *UserMutation) ResetUpdateTime() {
+	m.update_time = nil
+}
+
 // SetEmail sets the "email" field.
 func (m *UserMutation) SetEmail(s string) {
 	m.email = &s
@@ -190,6 +1401,60 @@ func (m *UserMutation) ResetPassword() {
 	m.password = nil
 }
 
+// AddCredIDs adds the "creds" edge to the Creds entity by ids.
+func (m *UserMutation) AddCredIDs(ids ...int) {
+	if m.creds == nil {
+		m.creds = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.creds[ids[i]] = struct{}{}
+	}
+}
+
+// ClearCreds clears the "creds" edge to the Creds entity.
+func (m *UserMutation) ClearCreds() {
+	m.clearedcreds = true
+}
+
+// CredsCleared reports if the "creds" edge to the Creds entity was cleared.
+func (m *UserMutation) CredsCleared() bool {
+	return m.clearedcreds
+}
+
+// RemoveCredIDs removes the "creds" edge to the Creds entity by IDs.
+func (m *UserMutation) RemoveCredIDs(ids ...int) {
+	if m.removedcreds == nil {
+		m.removedcreds = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.creds, ids[i])
+		m.removedcreds[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedCreds returns the removed IDs of the "creds" edge to the Creds entity.
+func (m *UserMutation) RemovedCredsIDs() (ids []int) {
+	for id := range m.removedcreds {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// CredsIDs returns the "creds" edge IDs in the mutation.
+func (m *UserMutation) CredsIDs() (ids []int) {
+	for id := range m.creds {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetCreds resets all changes to the "creds" edge.
+func (m *UserMutation) ResetCreds() {
+	m.creds = nil
+	m.clearedcreds = false
+	m.removedcreds = nil
+}
+
 // Where appends a list predicates to the UserMutation builder.
 func (m *UserMutation) Where(ps ...predicate.User) {
 	m.predicates = append(m.predicates, ps...)
@@ -209,7 +1474,13 @@ func (m *UserMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserMutation) Fields() []string {
-	fields := make([]string, 0, 2)
+	fields := make([]string, 0, 4)
+	if m.create_time != nil {
+		fields = append(fields, user.FieldCreateTime)
+	}
+	if m.update_time != nil {
+		fields = append(fields, user.FieldUpdateTime)
+	}
 	if m.email != nil {
 		fields = append(fields, user.FieldEmail)
 	}
@@ -224,6 +1495,10 @@ func (m *UserMutation) Fields() []string {
 // schema.
 func (m *UserMutation) Field(name string) (ent.Value, bool) {
 	switch name {
+	case user.FieldCreateTime:
+		return m.CreateTime()
+	case user.FieldUpdateTime:
+		return m.UpdateTime()
 	case user.FieldEmail:
 		return m.Email()
 	case user.FieldPassword:
@@ -237,6 +1512,10 @@ func (m *UserMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
+	case user.FieldCreateTime:
+		return m.OldCreateTime(ctx)
+	case user.FieldUpdateTime:
+		return m.OldUpdateTime(ctx)
 	case user.FieldEmail:
 		return m.OldEmail(ctx)
 	case user.FieldPassword:
@@ -250,6 +1529,20 @@ func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, er
 // type.
 func (m *UserMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case user.FieldCreateTime:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreateTime(v)
+		return nil
+	case user.FieldUpdateTime:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdateTime(v)
+		return nil
 	case user.FieldEmail:
 		v, ok := value.(string)
 		if !ok {
@@ -313,6 +1606,12 @@ func (m *UserMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *UserMutation) ResetField(name string) error {
 	switch name {
+	case user.FieldCreateTime:
+		m.ResetCreateTime()
+		return nil
+	case user.FieldUpdateTime:
+		m.ResetUpdateTime()
+		return nil
 	case user.FieldEmail:
 		m.ResetEmail()
 		return nil
@@ -325,48 +1624,84 @@ func (m *UserMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.creds != nil {
+		edges = append(edges, user.EdgeCreds)
+	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *UserMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case user.EdgeCreds:
+		ids := make([]ent.Value, 0, len(m.creds))
+		for id := range m.creds {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.removedcreds != nil {
+		edges = append(edges, user.EdgeCreds)
+	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *UserMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case user.EdgeCreds:
+		ids := make([]ent.Value, 0, len(m.removedcreds))
+		for id := range m.removedcreds {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.clearedcreds {
+		edges = append(edges, user.EdgeCreds)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *UserMutation) EdgeCleared(name string) bool {
+	switch name {
+	case user.EdgeCreds:
+		return m.clearedcreds
+	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *UserMutation) ClearEdge(name string) error {
+	switch name {
+	}
 	return fmt.Errorf("unknown User unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *UserMutation) ResetEdge(name string) error {
+	switch name {
+	case user.EdgeCreds:
+		m.ResetCreds()
+		return nil
+	}
 	return fmt.Errorf("unknown User edge %s", name)
 }

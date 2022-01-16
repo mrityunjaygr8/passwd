@@ -9,10 +9,13 @@ import (
 
 	"github.com/mrtyunjaygr8/passwd/ent/migrate"
 
+	"github.com/mrtyunjaygr8/passwd/ent/creds"
+	"github.com/mrtyunjaygr8/passwd/ent/passwords"
 	"github.com/mrtyunjaygr8/passwd/ent/user"
 
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 // Client is the client that holds all ent builders.
@@ -20,6 +23,10 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
+	// Creds is the client for interacting with the Creds builders.
+	Creds *CredsClient
+	// Passwords is the client for interacting with the Passwords builders.
+	Passwords *PasswordsClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
 }
@@ -35,6 +42,8 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
+	c.Creds = NewCredsClient(c.config)
+	c.Passwords = NewPasswordsClient(c.config)
 	c.User = NewUserClient(c.config)
 }
 
@@ -67,9 +76,11 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:    ctx,
-		config: cfg,
-		User:   NewUserClient(cfg),
+		ctx:       ctx,
+		config:    cfg,
+		Creds:     NewCredsClient(cfg),
+		Passwords: NewPasswordsClient(cfg),
+		User:      NewUserClient(cfg),
 	}, nil
 }
 
@@ -87,15 +98,17 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		config: cfg,
-		User:   NewUserClient(cfg),
+		config:    cfg,
+		Creds:     NewCredsClient(cfg),
+		Passwords: NewPasswordsClient(cfg),
+		User:      NewUserClient(cfg),
 	}, nil
 }
 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		User.
+//		Creds.
 //		Query().
 //		Count(ctx)
 //
@@ -118,7 +131,237 @@ func (c *Client) Close() error {
 // Use adds the mutation hooks to all the entity clients.
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
+	c.Creds.Use(hooks...)
+	c.Passwords.Use(hooks...)
 	c.User.Use(hooks...)
+}
+
+// CredsClient is a client for the Creds schema.
+type CredsClient struct {
+	config
+}
+
+// NewCredsClient returns a client for the Creds from the given config.
+func NewCredsClient(c config) *CredsClient {
+	return &CredsClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `creds.Hooks(f(g(h())))`.
+func (c *CredsClient) Use(hooks ...Hook) {
+	c.hooks.Creds = append(c.hooks.Creds, hooks...)
+}
+
+// Create returns a create builder for Creds.
+func (c *CredsClient) Create() *CredsCreate {
+	mutation := newCredsMutation(c.config, OpCreate)
+	return &CredsCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Creds entities.
+func (c *CredsClient) CreateBulk(builders ...*CredsCreate) *CredsCreateBulk {
+	return &CredsCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Creds.
+func (c *CredsClient) Update() *CredsUpdate {
+	mutation := newCredsMutation(c.config, OpUpdate)
+	return &CredsUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *CredsClient) UpdateOne(cr *Creds) *CredsUpdateOne {
+	mutation := newCredsMutation(c.config, OpUpdateOne, withCreds(cr))
+	return &CredsUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *CredsClient) UpdateOneID(id int) *CredsUpdateOne {
+	mutation := newCredsMutation(c.config, OpUpdateOne, withCredsID(id))
+	return &CredsUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Creds.
+func (c *CredsClient) Delete() *CredsDelete {
+	mutation := newCredsMutation(c.config, OpDelete)
+	return &CredsDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *CredsClient) DeleteOne(cr *Creds) *CredsDeleteOne {
+	return c.DeleteOneID(cr.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *CredsClient) DeleteOneID(id int) *CredsDeleteOne {
+	builder := c.Delete().Where(creds.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &CredsDeleteOne{builder}
+}
+
+// Query returns a query builder for Creds.
+func (c *CredsClient) Query() *CredsQuery {
+	return &CredsQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a Creds entity by its id.
+func (c *CredsClient) Get(ctx context.Context, id int) (*Creds, error) {
+	return c.Query().Where(creds.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *CredsClient) GetX(ctx context.Context, id int) *Creds {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryUser queries the user edge of a Creds.
+func (c *CredsClient) QueryUser(cr *Creds) *UserQuery {
+	query := &UserQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := cr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(creds.Table, creds.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, creds.UserTable, creds.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(cr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryPasswords queries the passwords edge of a Creds.
+func (c *CredsClient) QueryPasswords(cr *Creds) *PasswordsQuery {
+	query := &PasswordsQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := cr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(creds.Table, creds.FieldID, id),
+			sqlgraph.To(passwords.Table, passwords.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, creds.PasswordsTable, creds.PasswordsColumn),
+		)
+		fromV = sqlgraph.Neighbors(cr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *CredsClient) Hooks() []Hook {
+	return c.hooks.Creds
+}
+
+// PasswordsClient is a client for the Passwords schema.
+type PasswordsClient struct {
+	config
+}
+
+// NewPasswordsClient returns a client for the Passwords from the given config.
+func NewPasswordsClient(c config) *PasswordsClient {
+	return &PasswordsClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `passwords.Hooks(f(g(h())))`.
+func (c *PasswordsClient) Use(hooks ...Hook) {
+	c.hooks.Passwords = append(c.hooks.Passwords, hooks...)
+}
+
+// Create returns a create builder for Passwords.
+func (c *PasswordsClient) Create() *PasswordsCreate {
+	mutation := newPasswordsMutation(c.config, OpCreate)
+	return &PasswordsCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Passwords entities.
+func (c *PasswordsClient) CreateBulk(builders ...*PasswordsCreate) *PasswordsCreateBulk {
+	return &PasswordsCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Passwords.
+func (c *PasswordsClient) Update() *PasswordsUpdate {
+	mutation := newPasswordsMutation(c.config, OpUpdate)
+	return &PasswordsUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *PasswordsClient) UpdateOne(pa *Passwords) *PasswordsUpdateOne {
+	mutation := newPasswordsMutation(c.config, OpUpdateOne, withPasswords(pa))
+	return &PasswordsUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *PasswordsClient) UpdateOneID(id int) *PasswordsUpdateOne {
+	mutation := newPasswordsMutation(c.config, OpUpdateOne, withPasswordsID(id))
+	return &PasswordsUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Passwords.
+func (c *PasswordsClient) Delete() *PasswordsDelete {
+	mutation := newPasswordsMutation(c.config, OpDelete)
+	return &PasswordsDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *PasswordsClient) DeleteOne(pa *Passwords) *PasswordsDeleteOne {
+	return c.DeleteOneID(pa.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *PasswordsClient) DeleteOneID(id int) *PasswordsDeleteOne {
+	builder := c.Delete().Where(passwords.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &PasswordsDeleteOne{builder}
+}
+
+// Query returns a query builder for Passwords.
+func (c *PasswordsClient) Query() *PasswordsQuery {
+	return &PasswordsQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a Passwords entity by its id.
+func (c *PasswordsClient) Get(ctx context.Context, id int) (*Passwords, error) {
+	return c.Query().Where(passwords.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *PasswordsClient) GetX(ctx context.Context, id int) *Passwords {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryCred queries the cred edge of a Passwords.
+func (c *PasswordsClient) QueryCred(pa *Passwords) *CredsQuery {
+	query := &CredsQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := pa.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(passwords.Table, passwords.FieldID, id),
+			sqlgraph.To(creds.Table, creds.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, passwords.CredTable, passwords.CredColumn),
+		)
+		fromV = sqlgraph.Neighbors(pa.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *PasswordsClient) Hooks() []Hook {
+	return c.hooks.Passwords
 }
 
 // UserClient is a client for the User schema.
@@ -204,6 +447,22 @@ func (c *UserClient) GetX(ctx context.Context, id int) *User {
 		panic(err)
 	}
 	return obj
+}
+
+// QueryCreds queries the creds edge of a User.
+func (c *UserClient) QueryCreds(u *User) *CredsQuery {
+	query := &CredsQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(creds.Table, creds.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.CredsTable, user.CredsColumn),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // Hooks returns the client hooks.

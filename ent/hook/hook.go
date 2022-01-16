@@ -9,6 +9,32 @@ import (
 	"github.com/mrtyunjaygr8/passwd/ent"
 )
 
+// The CredsFunc type is an adapter to allow the use of ordinary
+// function as Creds mutator.
+type CredsFunc func(context.Context, *ent.CredsMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f CredsFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.CredsMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CredsMutation", m)
+	}
+	return f(ctx, mv)
+}
+
+// The PasswordsFunc type is an adapter to allow the use of ordinary
+// function as Passwords mutator.
+type PasswordsFunc func(context.Context, *ent.PasswordsMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f PasswordsFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.PasswordsMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PasswordsMutation", m)
+	}
+	return f(ctx, mv)
+}
+
 // The UserFunc type is an adapter to allow the use of ordinary
 // function as User mutator.
 type UserFunc func(context.Context, *ent.UserMutation) (ent.Value, error)
