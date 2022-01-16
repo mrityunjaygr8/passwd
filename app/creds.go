@@ -68,3 +68,45 @@ func (a *App) GetCred(token, name string) (*ent.Creds, string, error) {
 	}
 	return cred, pass[0].Password, nil
 }
+
+func (a *App) DeleteCred(token, name string) error {
+	user, err := a.GetUser(token)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	cred, err := user.QueryCreds().Where(creds.Name(name)).Only(a.Context)
+	if err != nil {
+		if _, ok := err.(*ent.NotFoundError); ok {
+			log.Printf("cred: %v not found", name)
+			return utils.NOT_FOUND
+		}
+		log.Printf("err querying cred, %v, %v", name, err)
+		return err
+
+	}
+
+	_, err = a.Client.Creds.Delete().Where(creds.ID(cred.ID)).Exec(a.Context)
+	if err != nil {
+		log.Printf("cred: %v can not be deleted", cred.Name)
+		return utils.BAD_REQUEST
+	}
+
+	return nil
+}
+
+func (a *App) UpdateCred(token, name, new_pass string) (*ent.Creds, error) {
+	user, err := a.GetUser(token)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	cred, err := user.QueryCreds().Where(creds.Name(name)).Only(a.Context)
+	_, err = a.Client.Passwords.Create().SetPassword(new_pass).SetCred(cred).Save(a.Context)
+	if err != nil {
+		log.Printf("cred: %v, error updating new password", cred.Name)
+		return &ent.Creds{}, utils.BAD_REQUEST
+	}
+
+	return cred, nil
+}
