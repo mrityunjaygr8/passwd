@@ -84,6 +84,9 @@ func signToken(user ent.User) (string, error) {
 }
 
 func verifyToken(token string) (string, error) {
+	if token == "" {
+		return "", utils.BAD_REQUEST
+	}
 	var paseto_token paseto.JSONToken
 	var footer string
 	err := paseto.NewV2().Decrypt(token, utils.SYMMETRIC_KEY, &paseto_token, &footer)
