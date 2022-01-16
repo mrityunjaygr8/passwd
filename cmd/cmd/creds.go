@@ -194,7 +194,33 @@ var history_cmd = &cobra.Command{
 		}
 
 		t.Render()
+	},
+}
 
+var generate_cred_length int
+var generate_cred_specials bool
+var generate_cred_cmd = &cobra.Command{
+	Short:     "Generate password for cred",
+	Long:      "Generate password and update a saved credential",
+	Args:      cobra.ExactArgs(1),
+	ValidArgs: []string{"name"},
+	Use:       "generate",
+	Run: func(cmd *cobra.Command, args []string) {
+		config := utils.GetConfig()
+		app := app.CreateApp(config)
+		defer app.Client.Close()
+		token := getToken()
+		if token == "" {
+			log.Fatal("You are not logged in")
+		}
+
+		_, pass, err := app.GeneratePassForCreds(token, args[0], generate_cred_specials, generate_cred_length)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		log.Printf("Password for Cred: %v successfully updated and copied to clipboard", args[0])
+		clipboard.WriteAll(pass)
 	},
 }
 
@@ -223,5 +249,10 @@ func init() {
 
 	// Delete Cred Command
 	creds_cmd.AddCommand(delete_cred)
+
+	// Generate Cred Command
+	generate_cred_cmd.Flags().IntVarP(&generate_cred_length, "length", "l", 14, "The length of the password to be generated")
+	generate_cred_cmd.Flags().BoolVarP(&generate_cred_specials, "disable-special", "d", false, "Disable use of Special Charecters in the password generation")
+	creds_cmd.AddCommand(generate_cred_cmd)
 	root_cmd.AddCommand(creds_cmd)
 }
