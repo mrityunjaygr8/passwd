@@ -20,10 +20,10 @@ var me_cmd = &cobra.Command{
 		defer app.Client.Close()
 		out, err := app.GetUser(getToken())
 		if err != nil {
-			log.Fatal("An error has occurred", err)
+			log.Fatal("An error has occurred: ", err)
 		}
 
-		fmt.Println("User info: ", out)
+		fmt.Println("User info: ", fmt.Sprintf("%v-%v", out.ID, out.Email))
 	},
 }
 
