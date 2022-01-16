@@ -16,7 +16,7 @@ var logout_cmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		token := getToken()
 		if token == "" {
-			log.Fatal("You are now logged in")
+			log.Fatal("You are not logged in")
 		}
 		err := os.Remove(utils.LOGIN_FILE)
 		if err != nil {
