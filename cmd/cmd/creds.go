@@ -166,6 +166,38 @@ var update_cred = &cobra.Command{
 	},
 }
 
+var history_cmd = &cobra.Command{
+	Use:       "history",
+	Short:     "History of cred",
+	Long:      "History of a saved credential",
+	Args:      cobra.ExactArgs(1),
+	ValidArgs: []string{"name"},
+	Run: func(cmd *cobra.Command, args []string) {
+		config := utils.GetConfig()
+		app := app.CreateApp(config)
+		defer app.Client.Close()
+		token := getToken()
+		if token == "" {
+			log.Fatal("You are not logged in")
+		}
+
+		passwds, err := app.HistoryCreds(token, args[0])
+		if err != nil {
+			log.Fatalf("error getting cred: %v history", args[0])
+		}
+
+		t := table.NewWriter()
+		t.SetOutputMirror(os.Stdout)
+		t.AppendHeader(table.Row{"Created", "Password"})
+		for _, x := range passwds {
+			t.AppendRow([]interface{}{x.CreateTime, x.Password})
+		}
+
+		t.Render()
+
+	},
+}
+
 func init() {
 	// Create Cred Command
 	create_cred_cmd.Flags().StringVarP(&create_cred_name, "name", "n", "", "[REQUIRED]The name of the credential to be added")
@@ -185,6 +217,9 @@ func init() {
 
 	// Update Cred Command
 	creds_cmd.AddCommand(update_cred)
+
+	// History of Cred Command
+	creds_cmd.AddCommand(history_cmd)
 
 	// Delete Cred Command
 	creds_cmd.AddCommand(delete_cred)

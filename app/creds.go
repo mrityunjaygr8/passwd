@@ -102,6 +102,15 @@ func (a *App) UpdateCred(token, name, new_pass string) (*ent.Creds, error) {
 	}
 
 	cred, err := user.QueryCreds().Where(creds.Name(name)).Only(a.Context)
+	if err != nil {
+		if _, ok := err.(*ent.NotFoundError); ok {
+			log.Printf("cred: %v not found", name)
+			return &ent.Creds{}, utils.NOT_FOUND
+		}
+		log.Printf("err querying cred, %v, %v", name, err)
+		return &ent.Creds{}, err
+
+	}
 	_, err = a.Client.Passwords.Create().SetPassword(new_pass).SetCred(cred).Save(a.Context)
 	if err != nil {
 		log.Printf("cred: %v, error updating new password", cred.Name)
@@ -109,4 +118,30 @@ func (a *App) UpdateCred(token, name, new_pass string) (*ent.Creds, error) {
 	}
 
 	return cred, nil
+}
+
+func (a *App) HistoryCreds(token, name string) ([]*ent.Passwords, error) {
+	user, err := a.GetUser(token)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	cred, err := user.QueryCreds().Where(creds.Name(name)).Only(a.Context)
+	if err != nil {
+		if _, ok := err.(*ent.NotFoundError); ok {
+			log.Printf("cred: %v not found", name)
+			return []*ent.Passwords{}, utils.NOT_FOUND
+		}
+		log.Printf("err querying cred, %v, %v", name, err)
+		return []*ent.Passwords{}, err
+
+	}
+
+	passwords, err := cred.QueryPasswords().Order(ent.Desc(passwords.FieldCreateTime)).All(a.Context)
+	if err != nil {
+		log.Printf("cred: %v, error getting cred history", name)
+		return []*ent.Passwords{}, err
+	}
+
+	return passwords, nil
 }
