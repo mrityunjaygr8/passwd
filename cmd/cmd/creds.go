@@ -111,6 +111,61 @@ var get_cred_cmd = &cobra.Command{
 	},
 }
 
+var delete_cred = &cobra.Command{
+	Short:     "Delete a cred",
+	Long:      "Delete details about a saved credential",
+	Args:      cobra.ExactArgs(1),
+	ValidArgs: []string{"name"},
+	Use:       "delete",
+	Run: func(cmd *cobra.Command, args []string) {
+		config := utils.GetConfig()
+		app := app.CreateApp(config)
+		defer app.Client.Close()
+		token := getToken()
+		if token == "" {
+			log.Fatal("You are not logged in")
+		}
+
+		err := app.DeleteCred(token, args[0])
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		log.Printf("Cred: %v deleted successfully", args[0])
+	},
+}
+
+var update_cred_password string
+var update_cred = &cobra.Command{
+	Short:     "Update a cred",
+	Long:      "Update details about a saved credential",
+	Args:      cobra.ExactArgs(1),
+	ValidArgs: []string{"name"},
+	Use:       "update",
+	Run: func(cmd *cobra.Command, args []string) {
+		config := utils.GetConfig()
+		app := app.CreateApp(config)
+		defer app.Client.Close()
+		token := getToken()
+		if token == "" {
+			log.Fatal("You are not logged in")
+		}
+
+		fmt.Printf("Enter the password for %v: ", args[0])
+		update_creds_bytes_pass, err := term.ReadPassword(int(syscall.Stdin))
+		if err != nil {
+			log.Println("error in reading user password")
+		}
+
+		update_cred_password = string(update_creds_bytes_pass)
+		fmt.Println()
+
+		_, err = app.UpdateCred(token, args[0], update_cred_password)
+
+		log.Printf("Cred: %v deleted successfully", args[0])
+	},
+}
+
 func init() {
 	// Create Cred Command
 	create_cred_cmd.Flags().StringVarP(&create_cred_name, "name", "n", "", "[REQUIRED]The name of the credential to be added")
@@ -127,5 +182,11 @@ func init() {
 
 	// List Creds Command
 	creds_cmd.AddCommand(list_creds_cmd)
+
+	// Update Cred Command
+	creds_cmd.AddCommand(update_cred)
+
+	// Delete Cred Command
+	creds_cmd.AddCommand(delete_cred)
 	root_cmd.AddCommand(creds_cmd)
 }
