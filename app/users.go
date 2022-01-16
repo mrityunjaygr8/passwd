@@ -1,7 +1,6 @@
 package app
 
 import (
-	"fmt"
 	"log"
 	"time"
 
@@ -44,24 +43,24 @@ func (a *App) LoginUser(email, password string) (string, error) {
 	return token, nil
 }
 
-func (a *App) GetUser(token string) (string, error) {
+func (a *App) GetUser(token string) (*ent.User, error) {
 	user_email, err := verifyToken(token)
 	if err != nil {
 		log.Printf("err getting user: %v", err)
-		return "", utils.BAD_REQUEST
+		return &ent.User{}, utils.BAD_REQUEST
 	}
 
 	user, err := a.Client.User.Query().Where(user.Email(user_email)).Only(a.Context)
 	if err != nil {
 		if _, ok := err.(*ent.NotFoundError); ok {
 			log.Printf("user: %v not found", user_email)
-			return "", utils.NOT_FOUND
+			return &ent.User{}, utils.NOT_FOUND
 		}
 		log.Printf("err querying user, %v, %v", user_email, err)
-		return "", err
+		return &ent.User{}, err
 	}
 
-	return fmt.Sprintf("%v-%v", user.ID, user.Email), nil
+	return user, nil
 }
 
 func signToken(user ent.User) (string, error) {
