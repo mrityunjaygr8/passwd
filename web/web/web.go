@@ -40,6 +40,10 @@ func CreateWebApp(config utils.Config) Web {
 	cred_router.HandleFunc("/", web.createCred).Methods("POST")
 
 	cred_router.HandleFunc("/{name}", web.deleteCred).Methods("DELETE")
+	cred_router.HandleFunc("/{name}", web.updateCred).Methods("PATCH")
+	cred_router.HandleFunc("/{name}", web.getCred).Methods("GET")
+	cred_router.HandleFunc("/{name}/history", web.historyCred).Methods("GET")
+	cred_router.HandleFunc("/{name}/generate", web.generateCred).Methods("GET")
 
 	web.Router = router
 	return web
