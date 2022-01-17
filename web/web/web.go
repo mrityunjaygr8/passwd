@@ -16,8 +16,8 @@ type Web struct {
 }
 
 type error_response struct {
-	Body string
-	Code int
+	Body string `json:"body"`
+	Code int    `json:"code"`
 }
 
 func CreateWebApp(config utils.Config) Web {
@@ -30,6 +30,7 @@ func CreateWebApp(config utils.Config) Web {
 
 	router.HandleFunc("/login", web.LoginHandler).Methods("POST")
 	router.HandleFunc("/me", web.MeHandler).Methods("GET")
+	router.HandleFunc("/generate", web.generate).Methods("GET")
 
 	web.Router = router
 	return web
