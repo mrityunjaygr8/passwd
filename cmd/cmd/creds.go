@@ -162,7 +162,7 @@ var update_cred = &cobra.Command{
 
 		_, err = app.UpdateCred(token, args[0], update_cred_password)
 
-		log.Printf("Cred: %v deleted successfully", args[0])
+		log.Printf("Cred: %v updated successfully", args[0])
 	},
 }
 
