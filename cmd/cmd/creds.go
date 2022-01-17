@@ -251,8 +251,8 @@ func init() {
 	creds_cmd.AddCommand(delete_cred)
 
 	// Generate Cred Command
-	generate_cred_cmd.Flags().IntVarP(&generate_cred_length, "length", "l", 14, "The length of the password to be generated")
-	generate_cred_cmd.Flags().BoolVarP(&generate_cred_specials, "disable-special", "d", false, "Disable use of Special Charecters in the password generation")
+	generate_cred_cmd.Flags().IntVarP(&generate_cred_length, "length", "l", utils.DEFAULT_PASS_LENGTH, "The length of the password to be generated")
+	generate_cred_cmd.Flags().BoolVarP(&generate_cred_specials, "disable-special", "d", utils.DEFAULT_DISABLE_SPECIAL, "Disable use of Special Charecters in the password generation")
 	creds_cmd.AddCommand(generate_cred_cmd)
 	root_cmd.AddCommand(creds_cmd)
 }
