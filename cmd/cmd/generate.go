@@ -5,6 +5,7 @@ import (
 
 	"github.com/atotto/clipboard"
 	"github.com/mrtyunjaygr8/passwd/app"
+	"github.com/mrtyunjaygr8/passwd/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -23,7 +24,7 @@ var generate_cmd = &cobra.Command{
 }
 
 func init() {
-	generate_cmd.Flags().IntVarP(&generate_length, "length", "l", 14, "The length of the password to be generated")
-	generate_cmd.Flags().BoolVarP(&generate_specials, "disable-special", "d", false, "Disable use of Special Charecters in the password generation")
+	generate_cmd.Flags().IntVarP(&generate_length, "length", "l", utils.DEFAULT_PASS_LENGTH, "The length of the password to be generated")
+	generate_cmd.Flags().BoolVarP(&generate_specials, "disable-special", "d", utils.DEFAULT_DISABLE_SPECIAL, "Disable use of Special Charecters in the password generation")
 	root_cmd.AddCommand(generate_cmd)
 }
