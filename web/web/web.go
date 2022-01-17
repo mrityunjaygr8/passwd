@@ -28,9 +28,18 @@ func CreateWebApp(config utils.Config) Web {
 	web.Client = app.Client
 	web.Context = app.Context
 
-	router.HandleFunc("/login", web.LoginHandler).Methods("POST")
-	router.HandleFunc("/me", web.MeHandler).Methods("GET")
-	router.HandleFunc("/generate", web.generate).Methods("GET")
+	api_router := router.PathPrefix("/api/").Subrouter()
+
+	api_router.HandleFunc("/login", web.LoginHandler).Methods("POST")
+	api_router.HandleFunc("/me", web.MeHandler).Methods("GET")
+	api_router.HandleFunc("/generate", web.generate).Methods("GET")
+
+	cred_router := api_router.PathPrefix("/creds/").Subrouter()
+
+	cred_router.HandleFunc("/", web.listCreds).Methods("GET")
+	cred_router.HandleFunc("/", web.createCred).Methods("POST")
+
+	cred_router.HandleFunc("/{name}", web.deleteCred).Methods("DELETE")
 
 	web.Router = router
 	return web
