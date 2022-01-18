@@ -15,7 +15,11 @@ type App struct {
 }
 
 func CreateApp(config utils.Config) App {
-	config_str := fmt.Sprintf("host=%s port=%d user=%s dbname=%s password=%s sslmode=disable", config.DB_HOST, config.DB_PORT, config.DB_USER, config.DB_NAME, config.DB_PASS)
+	var ssl = "disable"
+	if config.DB_SSL {
+		ssl = "require"
+	}
+	config_str := fmt.Sprintf("host=%s port=%d user=%s dbname=%s password=%s sslmode=%s", config.DB_HOST, config.DB_PORT, config.DB_USER, config.DB_NAME, config.DB_PASS, ssl)
 	client, err := ent.Open("postgres", config_str)
 	if err != nil {
 		log.Fatal(err)
