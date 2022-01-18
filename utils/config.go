@@ -37,7 +37,7 @@ func GetConfig() Config {
 	viper.SetDefault("DB_PORT", 5432)
 	viper.SetDefault("DB_NAME", "passwd")
 	viper.SetDefault("PORT", 1337)
-	viper.SetDefault("HOST", "localhost")
+	viper.SetDefault("HOST", "")
 	viper.SetDefault("DB_SSL", false)
 
 	err := viper.ReadInConfig()
