@@ -1,5 +1,8 @@
 module github.com/mrtyunjaygr8/passwd
 
+// +heroku goVersion go1.17
+// +heroku install ./web/main.go
+
 go 1.17
 
 require (
