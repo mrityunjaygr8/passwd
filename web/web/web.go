@@ -30,6 +30,7 @@ func CreateWebApp(config utils.Config) Web {
 
 	api_router := router.PathPrefix("/api/").Subrouter()
 
+	api_router.HandleFunc("/user/create", web.createUser).Methods("POST")
 	api_router.HandleFunc("/login", web.LoginHandler).Methods("POST")
 	api_router.HandleFunc("/me", web.MeHandler).Methods("GET")
 	api_router.HandleFunc("/generate", web.generate).Methods("GET")
