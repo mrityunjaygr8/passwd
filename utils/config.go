@@ -21,7 +21,6 @@ type Config struct {
 }
 
 func GetConfig() Config {
-	viper.SetEnvPrefix("passwd")
 	viper.BindEnv("db_host")
 	viper.BindEnv("db_port")
 	viper.BindEnv("db_name")
