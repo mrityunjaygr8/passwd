@@ -59,7 +59,6 @@ func GetConfig() Config {
 				// r, _ := regexp.Compile(`postgres://([\w]+):([\w]+)@([\w]+):([\w]+)/([\w]+)`)
 				r, _ := regexp.Compile(`postgres://(?P<user>[\w]+):(?P<pass>[\w]+)@(?P<host>[\w-.]+):(?P<port>[\d]+)/(?P<name>[\w]+)`)
 				matches := r.FindSubmatch([]byte(fmt.Sprint(d)))
-				fmt.Println(r.SubexpNames())
 				viper.Set("DB_USER", string(matches[1]))
 				viper.Set("DB_PASS", string(matches[2]))
 				viper.Set("DB_HOST", string(matches[3]))
